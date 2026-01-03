@@ -3,8 +3,6 @@ run:
   tests: true
 
 linters-settings:
-  govet:
-    check-shadowing: true
   errcheck:
     check-type-assertions: true
     check-blank: true
@@ -12,8 +10,6 @@ linters-settings:
     checks: ["all"]
   gosimple:
     checks: ["all"]
-  unused:
-    check-exported: true
 
 linters:
   enable:

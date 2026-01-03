@@ -20,7 +20,6 @@ var templateListCmd = &cobra.Command{
 	Short: "List available templates",
 	Long:  `List all available output templates.`,
 	RunE: func(_ *cobra.Command, _ []string) error {
-		templatesDir := "kpls/templates"
 		entries, err := os.ReadDir(templatesDir)
 		if err != nil {
 			return fmt.Errorf("failed to read templates directory: %w", err)
@@ -58,7 +57,7 @@ var templateShowCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
 		templateName := args[0]
-		path := fmt.Sprintf("kpls/templates/%s.md", templateName)
+		path := fmt.Sprintf("%s/%s.md", templatesDir, templateName)
 
 		content, err := os.ReadFile(path)
 		if err != nil {
@@ -157,7 +156,7 @@ var templateValidateCmd = &cobra.Command{
 		}
 
 		// Validate single template
-		path := fmt.Sprintf("kpls/templates/%s.md", templateName)
+		path := fmt.Sprintf("%s/%s.md", templatesDir, templateName)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("template not found: %s", templateName)

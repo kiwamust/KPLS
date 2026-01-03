@@ -55,9 +55,18 @@ var jobCreateCmd = &cobra.Command{
 			}
 		} else {
 			// Check for flag-based creation
-			title, _ := cmd.Flags().GetString("title")
-			owner, _ := cmd.Flags().GetString("owner")
-			outputType, _ := cmd.Flags().GetString("type")
+			title, err := cmd.Flags().GetString("title")
+			if err != nil {
+				return fmt.Errorf("failed to get title flag: %w", err)
+			}
+			owner, err := cmd.Flags().GetString("owner")
+			if err != nil {
+				return fmt.Errorf("failed to get owner flag: %w", err)
+			}
+			outputType, err := cmd.Flags().GetString("type")
+			if err != nil {
+				return fmt.Errorf("failed to get type flag: %w", err)
+			}
 
 			if title != "" && owner != "" {
 				// Create from flags
@@ -206,7 +215,10 @@ var jobShowCmd = &cobra.Command{
 	Long:  `Show detailed information about a job.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbose, _ := cmd.Flags().GetBool("verbose")
+		verbose, err := cmd.Flags().GetBool("verbose")
+		if err != nil {
+			return fmt.Errorf("failed to get verbose flag: %w", err)
+		}
 
 		s, err := store.NewFileStore()
 		if err != nil {
@@ -292,9 +304,9 @@ var jobShowCmd = &cobra.Command{
 		if len(job.QualityChecks) > 0 {
 			fmt.Println("\nQuality Checks:")
 			for _, qc := range job.QualityChecks {
-				status := "PASS"
+				status := statusPass
 				if !qc.Passed {
-					status = "FAIL"
+					status = statusFail
 				}
 				fmt.Printf("  %s: %s - Score: %d/%d - %s\n",
 					qc.GateType, status, qc.Score, qc.MaxScore, qc.CheckedAt.Format("2006-01-02 15:04"))
@@ -359,9 +371,9 @@ var jobTimelineCmd = &cobra.Command{
 
 		// Add quality checks
 		for _, qc := range job.QualityChecks {
-			status := "PASS"
+			status := statusPass
 			if !qc.Passed {
-				status = "FAIL"
+				status = statusFail
 			}
 			events = append(events, timelineEvent{
 				Time:    qc.CheckedAt,

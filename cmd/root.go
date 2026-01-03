@@ -25,4 +25,6 @@ func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(statsCmd)
+	rootCmd.AddCommand(artifactCmd)
+	rootCmd.AddCommand(gateCmd)
 }

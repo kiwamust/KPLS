@@ -1,5 +1,6 @@
 # Binaries
 kpls/kpls
+kpls-cli
 *.exe
 *.exe~
 *.dll

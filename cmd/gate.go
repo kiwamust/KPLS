@@ -46,9 +46,18 @@ var gateCheckCmd = &cobra.Command{
 			maxScore = 10 // default
 		}
 
-		notes, _ := cmd.Flags().GetString("notes")
-		defects, _ := cmd.Flags().GetStringSlice("defects")
-		checker, _ := cmd.Flags().GetString("checker")
+		notes, err := cmd.Flags().GetString("notes")
+		if err != nil {
+			return fmt.Errorf("failed to get notes flag: %w", err)
+		}
+		defects, err := cmd.Flags().GetStringSlice("defects")
+		if err != nil {
+			return fmt.Errorf("failed to get defects flag: %w", err)
+		}
+		checker, err := cmd.Flags().GetString("checker")
+		if err != nil {
+			return fmt.Errorf("failed to get checker flag: %w", err)
+		}
 		if checker == "" {
 			checker = os.Getenv("USER")
 			if checker == "" {
@@ -68,7 +77,7 @@ var gateCheckCmd = &cobra.Command{
 		}
 
 		// Create quality check
-		passed := score >= (maxScore * 9 / 10) // 90% threshold
+		var passed bool
 		if gateType == "FQC" {
 			passed = score >= (maxScore * 9 / 10) // 90% for FQC
 		} else if gateType == "IQC" {
@@ -131,9 +140,9 @@ var gateHistoryCmd = &cobra.Command{
 
 		fmt.Printf("Quality gate history for job %s:\n\n", jobID)
 		for i, qc := range job.QualityChecks {
-			status := "PASS"
+			status := statusPass
 			if !qc.Passed {
-				status = "FAIL"
+				status = statusFail
 			}
 			fmt.Printf("%d. %s - %s (%d/%d)\n", i+1, qc.GateType, status, qc.Score, qc.MaxScore)
 			fmt.Printf("   Checked by: %s at %s\n", qc.Checker, qc.CheckedAt.Format("2006-01-02 15:04:05"))

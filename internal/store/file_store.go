@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	dataDir     = "data"
-	jobsDir     = "data/jobs"
-	defectsDir  = "data/defects"
+	dataDir    = "data"
+	jobsDir    = "data/jobs"
+	defectsDir = "data/defects"
 )
 
 // FileStore handles file-based storage
@@ -66,7 +66,7 @@ func (s *FileStore) ListJobs() ([]*model.Job, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read jobs directory: %w", err)
 	}
-	
+
 	var jobs []*model.Job
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
@@ -113,7 +113,7 @@ func (s *FileStore) ListDefects() ([]*model.Defect, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read defects directory: %w", err)
 	}
-	
+
 	var defects []*model.Defect
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {

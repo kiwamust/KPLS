@@ -17,7 +17,7 @@ var templateListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available templates",
 	Long:  `List all available output templates.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		templates := []string{
 			"1pager_decision_memo",
 			"comparison_evaluation",
@@ -38,7 +38,7 @@ var templateShowCmd = &cobra.Command{
 	Short: "Show template content",
 	Long:  `Display the content of a template.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		templateName := args[0]
 		path := fmt.Sprintf("kpls/templates/%s.md", templateName)
 

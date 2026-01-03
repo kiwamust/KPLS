@@ -23,45 +23,49 @@ var jobCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new job",
 	Long:  `Create a new job ticket with required information.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
 		}
 
 		job := &model.Job{
-			ID:              store.GenerateJobID(),
-			Title:           "",
-			Owner:           "",
-			Created:         time.Now(),
-			Due:             time.Now().Add(7 * 24 * time.Hour), // default 7 days
-			Priority:        model.PriorityP2,
-			Status:          model.StatusBacklog,
-			OutputType:      model.OutputType1Pager,
-			Confidentiality: model.ConfInternal,
-			Audience:        []string{},
-			SuccessCriteria: []string{},
-			Constraints:     []string{},
-			Assumptions:     []string{},
-			ScopeIn:         []string{},
-			ScopeOut:        []string{},
-			Materials:       []model.Material{},
-			OpenQuestions:   []string{},
+			ID:               store.GenerateJobID(),
+			Title:            "",
+			Owner:            "",
+			Created:          time.Now(),
+			Due:              time.Now().Add(7 * 24 * time.Hour), // default 7 days
+			Priority:         model.PriorityP2,
+			Status:           model.StatusBacklog,
+			OutputType:       model.OutputType1Pager,
+			Confidentiality:  model.ConfInternal,
+			Audience:         []string{},
+			SuccessCriteria:  []string{},
+			Constraints:      []string{},
+			Assumptions:      []string{},
+			ScopeIn:          []string{},
+			ScopeOut:         []string{},
+			Materials:        []model.Material{},
+			OpenQuestions:    []string{},
 			DefinitionOfDone: []string{},
-			StageRuns:       []model.StageRun{},
-			QualityChecks:   []model.QualityCheck{},
-			Artifacts:       []model.Artifact{},
+			StageRuns:        []model.StageRun{},
+			QualityChecks:    []model.QualityCheck{},
+			Artifacts:        []model.Artifact{},
 		}
 
 		// Interactive input (simplified - in real implementation, use survey or similar)
 		fmt.Print("Title: ")
-		fmt.Scanln(&job.Title)
+		if _, err := fmt.Scanln(&job.Title); err != nil {
+			return fmt.Errorf("failed to read title: %w", err)
+		}
 		if job.Title == "" {
 			return fmt.Errorf("title is required")
 		}
 
 		fmt.Print("Owner: ")
-		fmt.Scanln(&job.Owner)
+		if _, err := fmt.Scanln(&job.Owner); err != nil {
+			return fmt.Errorf("failed to read owner: %w", err)
+		}
 
 		// Initialize first stage run
 		job.StageRuns = append(job.StageRuns, model.StageRun{
@@ -82,7 +86,7 @@ var jobListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all jobs",
 	Long:  `List all jobs in kanban format grouped by stage.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
@@ -133,7 +137,7 @@ var jobShowCmd = &cobra.Command{
 	Short: "Show job details",
 	Long:  `Show detailed information about a job.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
@@ -184,7 +188,7 @@ var jobAdvanceCmd = &cobra.Command{
 	Short: "Advance job to next stage",
 	Long:  `Move a job to the next stage in the workflow.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
@@ -224,12 +228,18 @@ var jobRejectCmd = &cobra.Command{
 			return err
 		}
 
-		reason, _ := cmd.Flags().GetString("reason")
+		reason, err := cmd.Flags().GetString("reason")
+		if err != nil {
+			return fmt.Errorf("failed to get reason flag: %w", err)
+		}
 		if reason == "" {
 			return fmt.Errorf("rejection reason is required (--reason)")
 		}
 
-		defects, _ := cmd.Flags().GetStringSlice("defects")
+		defects, err := cmd.Flags().GetStringSlice("defects")
+		if err != nil {
+			return fmt.Errorf("failed to get defects flag: %w", err)
+		}
 		if len(defects) == 0 {
 			return fmt.Errorf("at least one defect code is required (--defects)")
 		}

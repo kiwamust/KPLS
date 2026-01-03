@@ -21,7 +21,7 @@ var checkIQCCmd = &cobra.Command{
 	Short: "Run IQC (Incoming Quality Control) check",
 	Long:  `Perform incoming quality control check on a job.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
@@ -66,7 +66,7 @@ var checkIPQC1Cmd = &cobra.Command{
 	Short: "Run IPQC-1 (Skeleton Gate) check",
 	Long:  `Perform IPQC-1 skeleton gate check on a job's artifact.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
@@ -117,7 +117,7 @@ var checkIPQC2Cmd = &cobra.Command{
 	Short: "Run IPQC-2 (Evidence Gate) check",
 	Long:  `Perform IPQC-2 evidence gate check on a job's artifact.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
@@ -168,7 +168,7 @@ var checkFQCCmd = &cobra.Command{
 	Short: "Run FQC (Final Quality Control) check",
 	Long:  `Perform final quality control check on a job.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err

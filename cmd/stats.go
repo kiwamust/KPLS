@@ -17,7 +17,7 @@ var statsCmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Show statistics and metrics",
 	Long:  `Display workflow statistics including WIP, defect rates, and stage durations.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err

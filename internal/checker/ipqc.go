@@ -75,7 +75,7 @@ func (c *IPQCChecker) Check(job *model.Job, artifactContent string) (*model.Qual
 	return check, nil
 }
 
-func (c *IPQCChecker) checkSkeleton(content string, job *model.Job) (int, []string) {
+func (c *IPQCChecker) checkSkeleton(content string, _ *model.Job) (int, []string) {
 	score := 0
 	var defectCodes []string
 	lowerContent := strings.ToLower(content)
@@ -130,7 +130,7 @@ func (c *IPQCChecker) checkSkeleton(content string, job *model.Job) (int, []stri
 	return score, defectCodes
 }
 
-func (c *IPQCChecker) checkEvidence(content string, job *model.Job) (int, []string) {
+func (c *IPQCChecker) checkEvidence(content string, _ *model.Job) (int, []string) {
 	score := 0
 	var defectCodes []string
 	lowerContent := strings.ToLower(content)
@@ -188,14 +188,8 @@ func (c *IPQCChecker) checkEvidence(content string, job *model.Job) (int, []stri
 	}
 
 	// Check 9: Warnings for easily misunderstood parts
-	hasWarnings := strings.Contains(lowerContent, "注意") || strings.Contains(lowerContent, "警告") ||
-		strings.Contains(lowerContent, "warning")
-	if hasWarnings {
-		score++
-	} else {
-		// Not critical, but good to have
-		score++
-	}
+	// Not critical, but good to have
+	score++
 
 	// Check 10: References/links present
 	if hasSources {

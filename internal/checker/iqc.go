@@ -118,7 +118,7 @@ func (c *IQCChecker) Check(job *model.Job) (*model.QualityCheck, error) {
 
 	check.Score = score
 	check.DefectCodes = defectCodes
-	
+
 	// Pass if score >= 8 and no critical defects (D05, D08)
 	hasCriticalDefect := false
 	for _, code := range defectCodes {

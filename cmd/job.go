@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -23,55 +24,122 @@ var jobCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new job",
 	Long:  `Create a new job ticket with required information.`,
-	RunE: func(_ *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
 		}
 
-		job := &model.Job{
-			ID:               store.GenerateJobID(),
-			Title:            "",
-			Owner:            "",
-			Created:          time.Now(),
-			Due:              time.Now().Add(7 * 24 * time.Hour), // default 7 days
-			Priority:         model.PriorityP2,
-			Status:           model.StatusBacklog,
-			OutputType:       model.OutputType1Pager,
-			Confidentiality:  model.ConfInternal,
-			Audience:         []string{},
-			SuccessCriteria:  []string{},
-			Constraints:      []string{},
-			Assumptions:      []string{},
-			ScopeIn:          []string{},
-			ScopeOut:         []string{},
-			Materials:        []model.Material{},
-			OpenQuestions:    []string{},
-			DefinitionOfDone: []string{},
-			StageRuns:        []model.StageRun{},
-			QualityChecks:    []model.QualityCheck{},
-			Artifacts:        []model.Artifact{},
+		var job *model.Job
+
+		// Check for --from-file option
+		fromFile, err := cmd.Flags().GetString("from-file")
+		if err != nil {
+			return fmt.Errorf("failed to get from-file flag: %w", err)
+		}
+		if fromFile != "" {
+			// Load from JSON file
+			data, err := os.ReadFile(fromFile)
+			if err != nil {
+				return fmt.Errorf("failed to read job file: %w", err)
+			}
+			job = &model.Job{}
+			if err := json.Unmarshal(data, job); err != nil {
+				return fmt.Errorf("failed to parse job JSON: %w", err)
+			}
+			// Override ID and timestamps
+			job.ID = store.GenerateJobID()
+			job.Created = time.Now()
+			if job.Due.IsZero() {
+				job.Due = time.Now().Add(7 * 24 * time.Hour)
+			}
+		} else {
+			// Check for flag-based creation
+			title, _ := cmd.Flags().GetString("title")
+			owner, _ := cmd.Flags().GetString("owner")
+			outputType, _ := cmd.Flags().GetString("type")
+
+			if title != "" && owner != "" {
+				// Create from flags
+				job = &model.Job{
+					ID:               store.GenerateJobID(),
+					Title:            title,
+					Owner:            owner,
+					Created:          time.Now(),
+					Due:              time.Now().Add(7 * 24 * time.Hour),
+					Priority:         model.PriorityP2,
+					Status:           model.StatusBacklog,
+					OutputType:       model.OutputType(outputType),
+					Confidentiality:  model.ConfInternal,
+					Audience:         []string{},
+					SuccessCriteria:  []string{},
+					Constraints:      []string{},
+					Assumptions:      []string{},
+					ScopeIn:          []string{},
+					ScopeOut:         []string{},
+					Materials:        []model.Material{},
+					OpenQuestions:    []string{},
+					DefinitionOfDone: []string{},
+					StageRuns:        []model.StageRun{},
+					QualityChecks:    []model.QualityCheck{},
+					Artifacts:        []model.Artifact{},
+				}
+			} else {
+				// Interactive mode (original behavior)
+				job = &model.Job{
+					ID:               store.GenerateJobID(),
+					Title:            "",
+					Owner:            "",
+					Created:          time.Now(),
+					Due:              time.Now().Add(7 * 24 * time.Hour),
+					Priority:         model.PriorityP2,
+					Status:           model.StatusBacklog,
+					OutputType:       model.OutputType1Pager,
+					Confidentiality:  model.ConfInternal,
+					Audience:         []string{},
+					SuccessCriteria:  []string{},
+					Constraints:      []string{},
+					Assumptions:      []string{},
+					ScopeIn:          []string{},
+					ScopeOut:         []string{},
+					Materials:        []model.Material{},
+					OpenQuestions:    []string{},
+					DefinitionOfDone: []string{},
+					StageRuns:        []model.StageRun{},
+					QualityChecks:    []model.QualityCheck{},
+					Artifacts:        []model.Artifact{},
+				}
+
+				fmt.Print("Title: ")
+				if _, err := fmt.Scanln(&job.Title); err != nil {
+					return fmt.Errorf("failed to read title: %w", err)
+				}
+				if job.Title == "" {
+					return fmt.Errorf("title is required")
+				}
+
+				fmt.Print("Owner: ")
+				if _, err := fmt.Scanln(&job.Owner); err != nil {
+					return fmt.Errorf("failed to read owner: %w", err)
+				}
+			}
 		}
 
-		// Interactive input (simplified - in real implementation, use survey or similar)
-		fmt.Print("Title: ")
-		if _, err := fmt.Scanln(&job.Title); err != nil {
-			return fmt.Errorf("failed to read title: %w", err)
-		}
+		// Validate required fields
 		if job.Title == "" {
 			return fmt.Errorf("title is required")
 		}
-
-		fmt.Print("Owner: ")
-		if _, err := fmt.Scanln(&job.Owner); err != nil {
-			return fmt.Errorf("failed to read owner: %w", err)
+		if job.Owner == "" {
+			return fmt.Errorf("owner is required")
 		}
 
-		// Initialize first stage run
-		job.StageRuns = append(job.StageRuns, model.StageRun{
-			Stage:     model.StatusBacklog,
-			StartedAt: time.Now(),
-		})
+		// Initialize first stage run if not present
+		if len(job.StageRuns) == 0 {
+			job.StageRuns = append(job.StageRuns, model.StageRun{
+				Stage:     model.StatusBacklog,
+				StartedAt: time.Now(),
+			})
+		}
 
 		if err := s.SaveJob(job); err != nil {
 			return err
@@ -137,7 +205,9 @@ var jobShowCmd = &cobra.Command{
 	Short: "Show job details",
 	Long:  `Show detailed information about a job.`,
 	Args:  cobra.ExactArgs(1),
-	RunE: func(_ *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		verbose, _ := cmd.Flags().GetBool("verbose")
+
 		s, err := store.NewFileStore()
 		if err != nil {
 			return err
@@ -161,6 +231,61 @@ var jobShowCmd = &cobra.Command{
 			fmt.Println("\nMaterials:")
 			for i, m := range job.Materials {
 				fmt.Printf("  %d. [%s] %s\n", i+1, m.Kind, m.Ref)
+				if verbose {
+					fmt.Printf("      Freshness: %s, Reliability: %s\n", m.Freshness, m.Reliability)
+				}
+			}
+		}
+
+		if verbose {
+			if len(job.SuccessCriteria) > 0 {
+				fmt.Println("\nSuccess Criteria:")
+				for i, sc := range job.SuccessCriteria {
+					fmt.Printf("  %d. %s\n", i+1, sc)
+				}
+			}
+
+			if len(job.Constraints) > 0 {
+				fmt.Println("\nConstraints:")
+				for i, c := range job.Constraints {
+					fmt.Printf("  %d. %s\n", i+1, c)
+				}
+			}
+
+			if len(job.ScopeIn) > 0 {
+				fmt.Println("\nScope In:")
+				for i, s := range job.ScopeIn {
+					fmt.Printf("  %d. %s\n", i+1, s)
+				}
+			}
+
+			if len(job.ScopeOut) > 0 {
+				fmt.Println("\nScope Out:")
+				for i, s := range job.ScopeOut {
+					fmt.Printf("  %d. %s\n", i+1, s)
+				}
+			}
+
+			if len(job.StageRuns) > 0 {
+				fmt.Println("\nStage Runs:")
+				for i, sr := range job.StageRuns {
+					fmt.Printf("  %d. %s - Started: %s", i+1, sr.Stage, sr.StartedAt.Format("2006-01-02 15:04:05"))
+					if sr.CompletedAt != nil {
+						fmt.Printf(", Completed: %s", sr.CompletedAt.Format("2006-01-02 15:04:05"))
+					}
+					fmt.Println()
+					if sr.Notes != "" {
+						fmt.Printf("      Notes: %s\n", sr.Notes)
+					}
+				}
+			}
+
+			if len(job.Artifacts) > 0 {
+				fmt.Println("\nArtifacts:")
+				for i, art := range job.Artifacts {
+					fmt.Printf("  %d. Type: %s, File: %s, Version: %s\n", i+1, art.Type, art.Content, art.Version)
+					fmt.Printf("      Created: %s\n", art.CreatedAt.Format("2006-01-02 15:04:05"))
+				}
 			}
 		}
 
@@ -176,7 +301,88 @@ var jobShowCmd = &cobra.Command{
 				if len(qc.DefectCodes) > 0 {
 					fmt.Printf("    Defects: %v\n", qc.DefectCodes)
 				}
+				if verbose && qc.Notes != "" {
+					fmt.Printf("    Notes: %s\n", qc.Notes)
+				}
 			}
+		}
+
+		return nil
+	},
+}
+
+var jobTimelineCmd = &cobra.Command{
+	Use:   "timeline <job-id>",
+	Short: "Show job timeline",
+	Long:  `Show chronological timeline of job stages and quality checks.`,
+	Args:  cobra.ExactArgs(1),
+	RunE: func(_ *cobra.Command, args []string) error {
+		s, err := store.NewFileStore()
+		if err != nil {
+			return err
+		}
+
+		job, err := s.LoadJob(args[0])
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Timeline for job %s: %s\n\n", job.ID, job.Title)
+
+		// Combine stage runs and quality checks into timeline
+		type timelineEvent struct {
+			Time    time.Time
+			Type    string
+			Stage   string
+			Details string
+		}
+
+		var events []timelineEvent
+
+		// Add stage runs
+		for _, sr := range job.StageRuns {
+			events = append(events, timelineEvent{
+				Time:    sr.StartedAt,
+				Type:    "STAGE_START",
+				Stage:   string(sr.Stage),
+				Details: fmt.Sprintf("Started %s", sr.Stage),
+			})
+			if sr.CompletedAt != nil {
+				events = append(events, timelineEvent{
+					Time:    *sr.CompletedAt,
+					Type:    "STAGE_END",
+					Stage:   string(sr.Stage),
+					Details: fmt.Sprintf("Completed %s", sr.Stage),
+				})
+			}
+		}
+
+		// Add quality checks
+		for _, qc := range job.QualityChecks {
+			status := "PASS"
+			if !qc.Passed {
+				status = "FAIL"
+			}
+			events = append(events, timelineEvent{
+				Time:    qc.CheckedAt,
+				Type:    "QUALITY_CHECK",
+				Stage:   qc.GateType,
+				Details: fmt.Sprintf("%s: %s (%d/%d)", qc.GateType, status, qc.Score, qc.MaxScore),
+			})
+		}
+
+		// Sort by time
+		for i := 0; i < len(events)-1; i++ {
+			for j := i + 1; j < len(events); j++ {
+				if events[i].Time.After(events[j].Time) {
+					events[i], events[j] = events[j], events[i]
+				}
+			}
+		}
+
+		// Display timeline
+		for _, event := range events {
+			fmt.Printf("%s [%s] %s\n", event.Time.Format("2006-01-02 15:04:05"), event.Type, event.Details)
 		}
 
 		return nil
@@ -261,8 +467,16 @@ func init() {
 	jobCmd.AddCommand(jobCreateCmd)
 	jobCmd.AddCommand(jobListCmd)
 	jobCmd.AddCommand(jobShowCmd)
+	jobCmd.AddCommand(jobTimelineCmd)
 	jobCmd.AddCommand(jobAdvanceCmd)
 	jobCmd.AddCommand(jobRejectCmd)
+
+	jobCreateCmd.Flags().String("from-file", "", "Create job from JSON file")
+	jobCreateCmd.Flags().String("title", "", "Job title")
+	jobCreateCmd.Flags().String("owner", "", "Job owner")
+	jobCreateCmd.Flags().String("type", "1pager", "Output type (1pager, comparison, prd, retrospective)")
+
+	jobShowCmd.Flags().Bool("verbose", false, "Show detailed information")
 
 	jobRejectCmd.Flags().String("reason", "", "Rejection reason")
 	jobRejectCmd.Flags().StringSlice("defects", []string{}, "Defect codes (e.g., D01,D02)")

@@ -175,7 +175,7 @@ var templateValidateCmd = &cobra.Command{
 // validateTemplateFrontmatter validates YAML frontmatter in template
 func validateTemplateFrontmatter(content []byte) error {
 	contentStr := string(content)
-	
+
 	// Check for frontmatter delimiters
 	if !strings.HasPrefix(contentStr, "---\n") {
 		return fmt.Errorf("missing YAML frontmatter (must start with '---')")
@@ -188,7 +188,7 @@ func validateTemplateFrontmatter(content []byte) error {
 	}
 
 	frontmatter := contentStr[4 : endIdx+4]
-	
+
 	// Basic validation: check for 'type' field
 	if !strings.Contains(frontmatter, "type:") {
 		return fmt.Errorf("missing required field 'type' in frontmatter")

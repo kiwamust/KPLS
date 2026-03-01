@@ -107,4 +107,4 @@ go build -o kpls
 
 ## ライセンス
 
-内部利用
+MIT
